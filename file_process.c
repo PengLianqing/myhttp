@@ -17,6 +17,12 @@
 #include "file_process.h"
 #include "http_process.h"
 
+/**
+  * @brief          http发送文件
+  * 循环读文件并传输数据
+  * @param[in]      bev,filename
+  * @retval         0
+  */
 int send_file_to_http(struct bufferevent *bev ,const char *filename)
 {
     //打开文件
@@ -45,6 +51,11 @@ int send_file_to_http(struct bufferevent *bev ,const char *filename)
     return 0;
 }
 
+/**
+  * @brief          获取文件类型，并返回http关键字
+  * @param[in]      name
+  * @retval         http关键字
+  */
 /*
      *charset=iso-8859-1	西欧的编码，说明网站采用的编码是英文；
      *charset=gb2312		说明网站采用的编码是简体中文；
@@ -98,7 +109,11 @@ const char *get_file_type(char *name)
     return "text/plain; charset=utf-8";
 }
 
-//扫描目录并以html格式发送目录
+/**
+  * @brief          扫描目录并以html格式发送目录
+  * @param[in]      bev,dirname
+  * @retval         0
+  */
 int send_dir(struct bufferevent *bev,const char *dirname)
 {
     char encoded_name[1024];
@@ -111,13 +126,15 @@ int send_dir(struct bufferevent *bev,const char *dirname)
     char buf[4096] = {0};
     sprintf(buf, "<html><head><meta charset=\"utf-8\"><title>%s</title></head>", dirname);
     sprintf(buf+strlen(buf), "<body><h1>当前目录：%s</h1><table>", dirname);
+    
     //添加目录内容
     int num = scandir(dirname, &dirinfo, NULL, alphasort);
     for(i=0; i<num; ++i)
     {
-        // 编码
+        //编码
         strencode(encoded_name, sizeof(encoded_name), dirinfo[i]->d_name);
-
+        
+        //http发送目录
         sprintf(path, "%s%s", dirname, dirinfo[i]->d_name);
         printf("############# path = %s\n", path);
         if (lstat(path, &sb) < 0)

@@ -18,9 +18,13 @@
 #include "http_process.h"
 #include "file_process.h"
 
-//evconnlistener_new_bind回调函数
-//打印连接客户端情况
-//创建bufferevent事件对象，并设置回调函数
+/**
+  * @brief          监听事件的回调函数
+  * 1）输出连接客户端的地址结构；
+  * 2）创建bufferevent事件，对应read_cb和event_cb回调函数。
+  * @param[in]      内核自动传入
+  * @retval         NULL
+  */
 void listener_cb(
                  struct evconnlistener *listener ,
                  evutil_socket_t fd ,
@@ -51,17 +55,23 @@ void listener_cb(
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
 
-//bufferevent回调函数
+/**
+  * @brief          bufferevent的读回调函数
+  * 1）读取http请求；
+  * 2）做出http响应response_http()。
+  * @param[in]      内核自动传入,bev
+  * @retval         NULL
+  */
 void read_cb(struct bufferevent *bev ,void *arg)
 {
-    //bufferevent_read
-    //http_read(bev);
-
+    //从http请求中获取method、path信息
     char buf[4096]={0};
     char method[50], path[4096], protocol[32];
     bufferevent_read(bev, buf, sizeof(buf));
     printf("buf[%s]\n", buf);
-    sscanf(buf, "%[^ ] %[^ ] %[^ \r\n]", method, path, protocol);
+    sscanf(buf, "%[^ ] %[^ ] %[^ \r\n]", method, path, protocol); //正则表达式获取信息
+
+    //http响应
     printf("method[%s], path[%s], protocol[%s]\n", method, path, protocol);
     if(strcasecmp(method, "GET") == 0)
     {
@@ -70,33 +80,40 @@ void read_cb(struct bufferevent *bev ,void *arg)
     printf("******************** end call %s.........\n", __FUNCTION__);
 }
 
-void write_cb(struct bufferevent *bev ,void *arg)
-{
-    printf("write ok.\n");
-}
-
+/**
+  * @brief          bufferevent的事件回调函数
+  * event响应，如果是BEV_EVENT_CONNECTED则返回，发生错误或连接断开则释放资源。
+  * @param[in]      内核自动传入,bev,events
+  * @retval         NULL
+  */
 void event_cb(struct bufferevent *bev , short events ,void *arg)
 {
     if (events & BEV_EVENT_EOF)
     {
-        printf("connection closed\n");  
+        printf("connection closed\n");  //遇到文件结束指示，表示连接断开
                     
     }
-    else if(events & BEV_EVENT_ERROR)   
+    else if(events & BEV_EVENT_ERROR)   //操作时发生错误
     {
         printf("some other error\n");
                       
     }
-    else if(events & BEV_EVENT_CONNECTED)
+    else if(events & BEV_EVENT_CONNECTED) //请求的连接过程已经完成
     {
         printf("connect success.\n");
         return;                              
-    }             
+    } 
+
     // 释放资源
     bufferevent_free(bev);
 }
 
-//延时1s后退出
+/**
+  * @brief          信号事件回调函数
+  * 接收到信号如ctrl+c，此时延时1s后退出程序。
+  * @param[in]      内核自动传入,bev,events
+  * @retval         NULL
+  */
 void signal_cb(evutil_socket_t sig, short events, void *user_data)
 {
     struct event_base *base = user_data;

@@ -15,12 +15,17 @@
   ****************************(C) COPYRIGHT 2021 Peng****************************
 */
 #include "main.h"
+
 //user bufferevent callback
 #include "bufferevent.h"
 
-//#define SERVER_PORT 6202
-
-//服务器端程序
+/**
+  * @brief          服务器端程序
+  * 1）判断输入参数；
+  * 2）创建监听事件、信号事件并启动循环。
+  * @param[in]      ./server 6202 ./source
+  * @retval         0
+  */
 int main(int argc,char **argv)
 {
     //切换到输入参数指向的目录
